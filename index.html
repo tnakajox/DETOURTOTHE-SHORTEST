@@ -36,28 +36,20 @@ h1 { font-family: var(--disp); font-stretch: condensed; font-size: clamp(44px, 7
 .steps li.done { color: var(--muted); }
 .steps li.done:before { content: "✓"; color: var(--mint); border-color: var(--mint); }
 
+/* 上部：家の配置コントロールバー */
 .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
 .action-group { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); padding: 5px 8px; }
 .action-group.highlight-group { border-color: rgba(227, 179, 92, 0.55); }
 .group-label { font-size: 12px; font-weight: 500; color: var(--muted); padding: 0 6px; white-space: nowrap; }
-.btn { min-height: 44px; padding: 0 15px; border: 1px solid var(--border-hi); background: var(--surface); color: var(--text); font: 13.5px var(--sans); cursor: pointer; transition: all 0.16s ease; display: inline-flex; align-items: center; gap: 8px; }
+.btn { min-height: 44px; padding: 0 15px; border: 1px solid var(--border-hi); background: var(--surface); color: var(--text); font: 13.5px var(--sans); cursor: pointer; transition: all 0.16s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .btn:hover:not(:disabled) { border-color: var(--text); background: var(--surface-2); }
 .btn:disabled { opacity: 0.32; cursor: not-allowed; }
 .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .btn.active-preset { border-color: var(--gold); color: var(--gold); background: rgba(227, 179, 92, 0.08); }
-.btn-calc { min-height: 48px; background: var(--cyan); border-color: var(--cyan); color: #061014; font-weight: 600; padding: 0 22px; }
-.btn-calc:hover:not(:disabled) { background: #84ecf0; border-color: #84ecf0; }
-.btn-calc.ready-pulse { box-shadow: 0 0 22px rgba(92, 225, 230, 0.4); }
-.btn-race { min-height: 48px; background: var(--gold); border-color: var(--gold); color: #0b0e12; font-weight: 600; padding: 0 24px; }
-.btn-race:hover:not(:disabled) { background: #f0c575; border-color: #f0c575; }
-.btn-race.ready-pulse { box-shadow: 0 0 22px rgba(227, 179, 92, 0.45); }
 .btn-danger:hover:not(:disabled) { border-color: var(--coral); color: var(--coral); }
 .bar .hint { font-size: 12.5px; color: var(--muted); margin-left: auto; }
 
-.verdict { border: 1px solid var(--border); border-left: 3px solid var(--gold); background: linear-gradient(90deg, rgba(227, 179, 92, 0.07), var(--surface) 45%); padding: 16px 20px; margin-bottom: 20px; min-height: 84px; display: flex; flex-direction: column; justify-content: center; }
-.verdict b { color: var(--gold); font-weight: 600; }
-.score { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 6px; }
-
+/* 中央：CASE A & B の2つの図 */
 .lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .lane { background: var(--surface); border: 1px solid var(--border); position: relative; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
 .lane.winner { border-color: var(--gold); box-shadow: 0 0 32px rgba(227, 179, 92, 0.12); }
@@ -71,7 +63,7 @@ h1 { font-family: var(--disp); font-stretch: condensed; font-size: clamp(44px, 7
 .st { font-family: var(--mono); font-size: 11.5px; color: var(--gold); white-space: nowrap; padding-top: 3px; }
 
 .canvas-box { position: relative; width: 100%; aspect-ratio: 900 / 600; background: #080b10; cursor: crosshair; }
-canvas { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+.canvas-box canvas { display: block; width: 100%; height: 100%; touch-action: manipulation; }
 .empty-hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 90%; text-align: center; background: rgba(12, 17, 23, 0.88); border: 1px solid var(--border-hi); padding: 8px 16px; font-size: 12.5px; color: var(--muted); pointer-events: none; transition: opacity 0.25s; }
 .empty-hint.hidden { opacity: 0; }
 
@@ -83,6 +75,20 @@ canvas { display: block; width: 100%; height: 100%; touch-action: manipulation; 
 .heat span.t { flex: 1; height: 4px; background: #141c26; overflow: hidden; }
 .heat span.t i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--gold), var(--coral)); transition: width 0.06s linear; }
 
+/* 下部：再計算・スタートボタン＆ステータス表示セクション */
+.run-deck { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; }
+.run-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn-calc { min-height: 50px; background: var(--cyan); border-color: var(--cyan); color: #061014; font-weight: 600; padding: 0 24px; flex: 1 1 220px; }
+.btn-calc:hover:not(:disabled) { background: #84ecf0; border-color: #84ecf0; }
+.btn-calc.ready-pulse { box-shadow: 0 0 22px rgba(92, 225, 230, 0.4); }
+.btn-race { min-height: 50px; background: var(--gold); border-color: var(--gold); color: #0b0e12; font-weight: 600; padding: 0 26px; flex: 1 1 220px; }
+.btn-race:hover:not(:disabled) { background: #f0c575; border-color: #f0c575; }
+.btn-race.ready-pulse { box-shadow: 0 0 22px rgba(227, 179, 92, 0.45); }
+
+.verdict { border: 1px solid var(--border); border-left: 3px solid var(--gold); background: linear-gradient(90deg, rgba(227, 179, 92, 0.07), var(--surface) 45%); padding: 16px 20px; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+.verdict b { color: var(--gold); font-weight: 600; }
+.score { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 6px; }
+
 .legend { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 12.5px; color: var(--muted); margin: 14px 2px 0; }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
 .legend i { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--mint); }
@@ -90,11 +96,12 @@ canvas { display: block; width: 100%; height: 100%; touch-action: manipulation; 
 .legend i.g { border-top: 3px solid var(--gold); }
 .legend i.w { border-top: 1px solid rgba(240, 106, 84, 0.45); }
 
-.graph { margin-top: 26px; background: var(--surface); border: 1px solid var(--border); }
-.graph .gh { padding: 14px 20px 6px; font-size: 15px; font-weight: 500; }
+/* グラフセクション（スマホ対応修正済み） */
+.graph { margin-top: 26px; background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
+.graph .gh { padding: 14px 20px 10px; font-size: 15px; font-weight: 500; }
 .graph .gh small { display: block; font-size: 13px; font-weight: 300; color: var(--muted); margin-top: 2px; line-height: 1.7; }
-.graph canvas { aspect-ratio: 900 / 240; }
-.graph .gcap { margin: 0; padding: 4px 20px 16px; font-size: 13px; color: #bcc7d4; font-weight: 300; line-height: 1.8; }
+.graph canvas { display: block; width: 100%; height: auto !important; background: #080b10; }
+.graph .gcap { margin: 0; padding: 10px 20px 16px; font-size: 13px; color: #bcc7d4; font-weight: 300; line-height: 1.8; }
 .graph .gcap b.a { color: var(--cyan); font-weight: 500; }
 .graph .gcap b.b { color: var(--coral); font-weight: 500; }
 
@@ -135,6 +142,12 @@ noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var
   .hero { grid-template-columns: 1fr; gap: 20px; padding: 32px 0 26px; }
   .lanes, .cards, .steps, .navi-panel, .meta-grid { grid-template-columns: 1fr; }
   .bar .hint { margin-left: 0; width: 100%; }
+  .lh { padding: 12px 14px 10px; }
+  .lh p { font-size: 12.5px; }
+  .lf { padding: 10px 14px 12px; }
+  .dist { font-size: 26px; }
+  .graph .gh { padding: 14px 14px 8px; }
+  .graph .gcap { padding: 10px 14px 14px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -162,10 +175,11 @@ noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var
 
   <ol class="steps">
     <li id="step-1" class="active">家を置く。地図をクリックで追加・削除（最初は見本の14軒が置いてあります）</li>
-    <li id="step-2">「① ルートを計算」を押すと、AとBが同じ出発ルートから、短い道順を探し始める</li>
+    <li id="step-2">地図の下にある「① ルートを計算」を押すと、AとBが短い道順を探し始める</li>
     <li id="step-3">計算が終わったら「② スタート」を押して、見つけた道順の短さを競争</li>
   </ol>
 
+  <!-- 1. 家の配置セクション -->
   <div class="bar">
     <div class="action-group" id="preset-group" role="group" aria-label="ランダムで配置">
       <span class="group-label">家の数を変える：</span>
@@ -173,8 +187,6 @@ noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var
       <button class="btn" data-n="14" type="button">14軒</button>
       <button class="btn" data-n="22" type="button">22軒</button>
     </div>
-    <button class="btn btn-calc" id="calc" type="button" disabled>① ルートを計算</button>
-    <button class="btn btn-race" id="go" type="button" disabled>② スタート（競争開始）</button>
     <div class="action-group" role="group" aria-label="家の編集">
       <button class="btn" id="undo" type="button" disabled>1つ戻す</button>
       <button class="btn btn-danger" id="clr" type="button" disabled>全部消す</button>
@@ -182,12 +194,8 @@ noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var
     <span class="hint">地図タップ：家を追加 ／ 家をタップ：削除</span>
   </div>
 
-  <div class="verdict" role="status" aria-live="polite">
-    <div id="msg"></div>
-    <div class="score" id="score"></div>
-  </div>
-
-  <div class="lanes">
+  <!-- 2. CASE A & B の2つの図セクション -->
+  <div class="lanes" id="lanes-section">
     <section class="lane a" id="lane-a">
       <div class="lh">
         <div>
@@ -225,6 +233,19 @@ noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var
         <div class="heat">寄り道許容度<span class="t"><i id="hb"></i></span>冷めるほど厳格化</div>
       </div>
     </section>
+  </div>
+
+  <!-- 3. 再計算・スタートボタン＆ステータスセクション -->
+  <div class="run-deck">
+    <div class="run-actions">
+      <button class="btn btn-calc" id="calc" type="button" disabled>① ルートを計算</button>
+      <button class="btn btn-race" id="go" type="button" disabled>② スタート（競争開始）</button>
+    </div>
+
+    <div class="verdict" role="status" aria-live="polite">
+      <div id="msg"></div>
+      <div class="score" id="score"></div>
+    </div>
   </div>
 
   <div class="legend">
@@ -330,7 +351,7 @@ noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var
     </div>
   </div>
 
-<footer>
+  <footer>
     <span>DETOUR TO THE SHORTEST — SIMULATED ANNEALING &amp; TRAVELING SALESPERSON PROBLEM</span>
     <span>NAKAJOX EXPERIMENT / © electriclady.xyz</span>
   </footer>
@@ -339,7 +360,7 @@ noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var
 <script>
 (() => {
 'use strict';
-const W = 900, H = 600, GW = 900, GH = 240;
+const W = 900, H = 600, GW = 900;
 const base = { x: 450, y: 300 }, T0 = 135, T1 = 0.35, SPEED = 7.5;
 const SANS = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Meiryo,sans-serif';
 const MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
@@ -370,9 +391,22 @@ const lanes = ['a', 'b'].map(id => {
     route: null, best: null, cum: null, d: 0, T: 0, sparks: [], trail: [], hist: [], histDone: false, arrived: false, rank: 0, iter: 0
   };
 });
+
 const gc = $('#cg');
-gc.width = GW; gc.height = GH;
-const gx = sized(gc);
+let curGH = 0, gx = null;
+function ensureGraphSize() {
+  const cw = gc.clientWidth || GW;
+  const targetGH = cw < 560 ? 440 : 250;
+  if (curGH !== targetGH || !gx) {
+    curGH = targetGH;
+    gc.width = GW * DPR;
+    gc.height = curGH * DPR;
+    gx = gc.getContext('2d');
+    gx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  return curGH;
+}
+ensureGraphSize();
 
 const nodes = () => [base, ...pts];
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -521,7 +555,6 @@ function startCalculation() {
   if (pts.length < 3 || phase === 'search' || phase === 'run') return;
   const ns = nodes(), n = ns.length;
 
-  // AとBに同じ出発ルートを渡す（ランダムに作った20本のうち、いちばん長いもの）
   let first = null, firstD = -1;
   for (let trial = 0; trial < 20; trial++) {
     const rest = [...Array(n - 1)].map((_, i) => i + 1);
@@ -552,7 +585,7 @@ function startCalculation() {
   phase = 'search';
   setStep(2);
   syncButtons();
-  msg('<b>ルートを計算中...</b> 右のBでは、赤い破線が長くなる変更も試しながら動き回り、温度が下がるにつれて、緑の最良ルートに落ち着いていきます。左のAは、短くなる変更だけを採用します。下のグラフで、長さの変化も見られます。');
+  msg('<b>ルートを計算中...</b> 右（スマホは下）のBでは、赤い破線が長くなる変更も試しながら動き回り、温度が下がるにつれて緑の最良ルートに落ち着いていきます。');
   raf = requestAnimationFrame(tick);
 }
 
@@ -571,7 +604,6 @@ function startRace() {
   raf = requestAnimationFrame(tick);
 }
 
-// AとBは同じ種類の入れ替え（2-opt 72% / 1点移動 28%）を使う。違うのは、採用のルールだけ。
 function propose(L) {
   const r = L.route, n = r.length;
   const c = r.slice();
@@ -717,21 +749,34 @@ function ui() {
 }
 
 function drawGraph() {
+  const GH = ensureGraphSize();
   const x = gx;
   x.fillStyle = '#080b10';
   x.fillRect(0, 0, GW, GH);
-  const cw = gc.clientWidth || GW, narrow = cw < 520, fs = Math.min(26, 11 * GW / cw);
-  const pl = narrow ? 58 : 62, pr = 24, pt = 16, pb = 38, pw = GW - pl - pr, ph = GH - pt - pb;
+
+  const cw = gc.clientWidth || GW;
+  const narrow = cw < 560;
+  const scale = GW / cw;
+  const fs = Math.min(26, Math.round((narrow ? 12 : 11.5) * scale));
+
+  const pl = narrow ? 56 : 64;
+  const pr = 22;
+  const pt = narrow ? 24 : 18;
+  const pb = narrow ? 52 : 42;
+  const pw = GW - pl - pr;
+  const ph = GH - pt - pb;
 
   x.strokeStyle = '#1e2936';
-  x.lineWidth = 1;
+  x.lineWidth = 1.5;
   x.strokeRect(pl + 0.5, pt + 0.5, pw, ph);
+
   x.fillStyle = '#8494a7';
   x.font = `${fs}px ${SANS}`;
   x.textAlign = 'center';
-  x.fillText(narrow ? '回数 →' : '試した回数 →', pl + pw / 2, GH - 10);
+  x.fillText(narrow ? '試した回数 →' : '試した回数 →', pl + pw / 2, GH - 12);
+
   x.save();
-  x.translate(fs + 2, pt + ph / 2);
+  x.translate(Math.max(22, fs + 6), pt + ph / 2);
   x.rotate(-Math.PI / 2);
   x.fillText(narrow ? '下ほど短い' : 'いまのルートの長さ（下ほど短い）', 0, 0);
   x.restore();
@@ -741,33 +786,50 @@ function drawGraph() {
     x.fillText(narrow ? '「① ルートを計算」で描かれます' : '「① ルートを計算」を押すと、AとBの探し方の違いが、ここに描かれます', pl + pw / 2, pt + ph / 2 + 4);
     return;
   }
+
   const xmax = Math.max(1, B.total);
   let ymax = -Infinity, ymin = Infinity;
   [A, B].forEach(L => L.hist.forEach(p => { if (p.y > ymax) ymax = p.y; if (p.y < ymin) ymin = p.y; }));
   if (ymax - ymin < 1) ymax = ymin + 1;
   const span = ymax - ymin;
-  ymin -= span * 0.06;
-  ymax += span * 0.04;
+  ymin -= span * 0.14;
+  ymax += span * 0.06;
+
   const X = v => pl + Math.min(1, v / xmax) * pw;
   const Y = v => pt + (1 - (v - ymin) / (ymax - ymin)) * ph;
 
-  [[A, '#5ce1e6', 1.8, 'A'], [B, '#f06a54', 1.4, 'B']].forEach(([L, col, lw, name]) => {
+  [[A, '#5ce1e6', narrow ? 3 : 2, 'A'], [B, '#f06a54', narrow ? 2.4 : 1.6, 'B']].forEach(([L, col, lw, name]) => {
     x.strokeStyle = col;
     x.lineWidth = lw;
     x.lineJoin = 'round';
     x.beginPath();
     L.hist.forEach((p, i) => i ? x.lineTo(X(p.x), Y(p.y)) : x.moveTo(X(p.x), Y(p.y)));
     x.stroke();
+
     const last = L.hist[L.hist.length - 1];
+    const lx = X(last.x);
+    const ly = Y(last.y);
+
     x.fillStyle = col;
     x.beginPath();
-    x.arc(X(last.x), Y(last.y), 3.5, 0, Math.PI * 2);
+    x.arc(lx, ly, narrow ? 5 : 3.8, 0, Math.PI * 2);
     x.fill();
+
     if (L.histDone) {
-      x.font = `500 ${fs}px ${MONO}`;
-      x.textAlign = X(last.x) > pl + pw - 90 ? 'right' : 'left';
-      const dx = X(last.x) > pl + pw - 90 ? -9 : 9;
-      x.fillText(`${name} ${shown(last.y)}${name === 'A' && !narrow ? '（停止）' : ''}`, X(last.x) + dx, Y(last.y) + (name === 'A' ? fs + 4 : -9));
+      x.font = `600 ${fs}px ${MONO}`;
+      const labelText = `${name} ${shown(last.y)}${name === 'A' && !narrow ? '（停止）' : ''}`;
+      const nearRight = lx > pl + pw - (narrow ? 190 : 140);
+      x.textAlign = nearRight ? 'right' : 'left';
+      const dx = nearRight ? -10 : 10;
+
+      // 枠内に収まるようにY位置をクランプ
+      let ty = name === 'A' ? ly - 10 : ly - 12;
+      if (name === 'A' && Math.abs(Y(A.hist[A.hist.length - 1].y) - Y(B.hist[B.hist.length - 1].y)) < fs + 10) {
+        ty = ly - fs - 12;
+      }
+      ty = Math.max(pt + fs + 4, Math.min(pt + ph - 8, ty));
+
+      x.fillText(labelText, lx + dx, ty);
     }
   });
 }
