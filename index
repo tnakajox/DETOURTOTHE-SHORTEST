@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070a0e">
+<meta name="description" content="DETOUR TO THE SHORTEST — 近道だけを選ぶ探し方と、あえて遠回りも試す探し方。同じ地図で競わせる、焼きなまし法と巡回セールスマン問題の可視化実験。">
+<title>003 — DETOUR TO THE SHORTEST | NAKAJOX EXPERIMENT</title>
+<style>
+:root {
+  --bg: #070a0e; --surface: #0c1117; --surface-2: #121922; --border: #1e2936; --border-hi: #33465c;
+  --text: #eef2f6; --muted: #8494a7; --gold: #e3b35c; --cyan: #5ce1e6; --coral: #f06a54; --mint: #5cd69c;
+  --sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", Meiryo, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Courier New", monospace;
+  --disp: "Arial Narrow", "Helvetica Neue", Arial, "Hiragino Sans", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.8 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 28px 22px 84px; }
+
+.mast { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--muted); }
+.mast b { color: var(--gold); font-weight: 500; }
+
+.hero { padding: 46px 0 36px; border-bottom: 1px solid var(--border); margin-bottom: 28px; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 36px; align-items: end; }
+.kicker { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--cyan); margin-bottom: 10px; }
+h1 { font-family: var(--disp); font-stretch: condensed; font-size: clamp(44px, 7.2vw, 88px); line-height: 0.96; letter-spacing: 0.02em; font-weight: 700; margin: 0; text-transform: uppercase; }
+.philo-sub { margin-top: 18px; padding-left: 16px; border-left: 3px solid var(--gold); font-size: clamp(18px, 2.3vw, 24px); font-weight: 500; letter-spacing: 0.05em; line-height: 1.5; color: var(--gold); }
+.philo-lead { margin: 14px 0 0; padding-left: 19px; font-size: clamp(14.5px, 1.6vw, 16.5px); line-height: 1.75; letter-spacing: 0.02em; }
+.lede { color: #9fb0c2; font-size: 14px; font-weight: 300; margin: 0; line-height: 1.9; }
+
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin: 0 0 22px; padding: 0; list-style: none; counter-reset: s; }
+.steps li { counter-increment: s; background: var(--surface); padding: 15px 18px; font-size: 13.5px; color: var(--muted); display: flex; align-items: flex-start; gap: 12px; transition: background 0.2s, color 0.2s; }
+.steps li.active { background: var(--surface-2); color: var(--text); }
+.steps li:before { content: "0" counter(s); font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--muted); border: 1px solid var(--border-hi); padding: 2px 6px; flex-shrink: 0; margin-top: 2px; }
+.steps li.active:before { color: var(--gold); border-color: var(--gold); background: rgba(227, 179, 92, 0.1); }
+.steps li.done { color: var(--muted); }
+.steps li.done:before { content: "✓"; color: var(--mint); border-color: var(--mint); }
+
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.action-group { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); padding: 5px 8px; }
+.action-group.highlight-group { border-color: rgba(227, 179, 92, 0.55); }
+.group-label { font-size: 12px; font-weight: 500; color: var(--muted); padding: 0 6px; white-space: nowrap; }
+.btn { min-height: 44px; padding: 0 15px; border: 1px solid var(--border-hi); background: var(--surface); color: var(--text); font: 13.5px var(--sans); cursor: pointer; transition: all 0.16s ease; display: inline-flex; align-items: center; gap: 8px; }
+.btn:hover:not(:disabled) { border-color: var(--text); background: var(--surface-2); }
+.btn:disabled { opacity: 0.32; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn.active-preset { border-color: var(--gold); color: var(--gold); background: rgba(227, 179, 92, 0.08); }
+.btn-calc { min-height: 48px; background: var(--cyan); border-color: var(--cyan); color: #061014; font-weight: 600; padding: 0 22px; }
+.btn-calc:hover:not(:disabled) { background: #84ecf0; border-color: #84ecf0; }
+.btn-calc.ready-pulse { box-shadow: 0 0 22px rgba(92, 225, 230, 0.4); }
+.btn-race { min-height: 48px; background: var(--gold); border-color: var(--gold); color: #0b0e12; font-weight: 600; padding: 0 24px; }
+.btn-race:hover:not(:disabled) { background: #f0c575; border-color: #f0c575; }
+.btn-race.ready-pulse { box-shadow: 0 0 22px rgba(227, 179, 92, 0.45); }
+.btn-danger:hover:not(:disabled) { border-color: var(--coral); color: var(--coral); }
+.bar .hint { font-size: 12.5px; color: var(--muted); margin-left: auto; }
+
+.verdict { border: 1px solid var(--border); border-left: 3px solid var(--gold); background: linear-gradient(90deg, rgba(227, 179, 92, 0.07), var(--surface) 45%); padding: 16px 20px; margin-bottom: 20px; min-height: 84px; display: flex; flex-direction: column; justify-content: center; }
+.verdict b { color: var(--gold); font-weight: 600; }
+.score { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.lane { background: var(--surface); border: 1px solid var(--border); position: relative; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+.lane.winner { border-color: var(--gold); box-shadow: 0 0 32px rgba(227, 179, 92, 0.12); }
+.lh { padding: 16px 20px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.lh-title { display: flex; align-items: center; gap: 10px; }
+.tag { font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 3px 8px; letter-spacing: 0.08em; white-space: nowrap; }
+.lane.a .tag { background: rgba(92, 225, 230, 0.14); color: var(--cyan); border: 1px solid rgba(92, 225, 230, 0.35); }
+.lane.b .tag { background: rgba(240, 106, 84, 0.14); color: var(--coral); border: 1px solid rgba(240, 106, 84, 0.35); }
+.lh h2 { margin: 0; font-size: 17px; font-weight: 500; }
+.lh p { margin: 6px 0 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.st { font-family: var(--mono); font-size: 11.5px; color: var(--gold); white-space: nowrap; padding-top: 3px; }
+
+.canvas-box { position: relative; width: 100%; aspect-ratio: 900 / 600; background: #080b10; cursor: crosshair; }
+canvas { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+.empty-hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 90%; text-align: center; background: rgba(12, 17, 23, 0.88); border: 1px solid var(--border-hi); padding: 8px 16px; font-size: 12.5px; color: var(--muted); pointer-events: none; transition: opacity 0.25s; }
+.empty-hint.hidden { opacity: 0; }
+
+.lf { padding: 14px 20px 16px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: center; }
+.dist { font-family: var(--mono); font-size: 32px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+.dist small { font-family: var(--sans); font-size: 12px; color: var(--muted); margin-left: 8px; font-weight: 400; letter-spacing: 0; }
+.delta-badge { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.heat { grid-column: 1 / -1; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 12px; }
+.heat span.t { flex: 1; height: 4px; background: #141c26; overflow: hidden; }
+.heat span.t i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--gold), var(--coral)); transition: width 0.06s linear; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 12.5px; color: var(--muted); margin: 14px 2px 0; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--mint); }
+.legend i.d { border-top: 2px dashed var(--coral); }
+.legend i.g { border-top: 3px solid var(--gold); }
+.legend i.w { border-top: 1px solid rgba(240, 106, 84, 0.45); }
+
+.graph { margin-top: 26px; background: var(--surface); border: 1px solid var(--border); }
+.graph .gh { padding: 14px 20px 6px; font-size: 15px; font-weight: 500; }
+.graph .gh small { display: block; font-size: 13px; font-weight: 300; color: var(--muted); margin-top: 2px; line-height: 1.7; }
+.graph canvas { aspect-ratio: 900 / 240; }
+.graph .gcap { margin: 0; padding: 4px 20px 16px; font-size: 13px; color: #bcc7d4; font-weight: 300; line-height: 1.8; }
+.graph .gcap b.a { color: var(--cyan); font-weight: 500; }
+.graph .gcap b.b { color: var(--coral); font-weight: 500; }
+
+.sec-head { margin: 68px 0 24px; padding-top: 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
+h3.sec { font-size: clamp(22px, 3vw, 30px); font-weight: 500; letter-spacing: -0.01em; margin: 6px 0 0; }
+.lead { color: var(--muted); margin: 0; font-size: 14px; }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; justify-content: space-between; }
+.card-num { font-family: var(--mono); font-size: 11px; color: var(--gold); letter-spacing: 0.12em; margin-bottom: 10px; }
+.card h4 { margin: 0 0 12px; font-size: 18px; font-weight: 500; }
+.card p { margin: 0 0 14px; font-size: 14px; font-weight: 300; color: #bcc7d4; line-height: 1.85; }
+.card .eg { font-size: 13.5px; color: #9fb0c2; border-top: 1px solid var(--border); padding-top: 14px; line-height: 1.8; }
+.card .eg p { font-size: 13.5px; color: #9fb0c2; margin: 0 0 10px; }
+.card code { display: block; font: 500 12.5px var(--mono); color: var(--cyan); margin-top: 10px; background: var(--bg); padding: 8px 10px; border: 1px solid var(--border); white-space: normal; }
+.big { font-family: var(--mono); font-size: 20px; color: var(--gold); font-weight: 500; margin: 4px 0 12px; }
+.prob { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 6px 0 10px; font-size: 13.5px; }
+.prob b { font-family: var(--mono); color: var(--gold); font-weight: 500; text-align: right; }
+
+.navi-panel { margin-top: 24px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--surface-2), var(--surface)); padding: 28px 30px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 28px; align-items: center; }
+.navi-panel h4 { margin: 8px 0 10px; font-size: 20px; font-weight: 500; }
+.navi-panel p { margin: 0 0 12px; font-size: 14px; font-weight: 300; color: #c2cdd9; line-height: 1.85; }
+.navi-panel p:last-child { margin-bottom: 0; }
+
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+.limits { border: 1px solid var(--border); border-left: 3px solid var(--muted); background: var(--surface); padding: 20px 24px; }
+.limits.tech-box { border-left-color: var(--cyan); }
+.limits h4 { margin: 0 0 10px; font-size: 14px; font-weight: 500; letter-spacing: 0.04em; }
+.limits ul { margin: 0; padding-left: 18px; font-size: 13.5px; font-weight: 300; color: var(--muted); }
+.limits li { margin: 6px 0; }
+.tech-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tech-tag { font-family: var(--mono); font-size: 11.5px; color: var(--cyan); background: var(--bg); border: 1px solid var(--border-hi); padding: 4px 10px; }
+
+footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+noscript p { background: #26383a; padding: 14px 18px; border-left: 3px solid var(--coral); }
+
+@media (max-width: 960px) {
+  .hero { grid-template-columns: 1fr; gap: 20px; padding: 32px 0 26px; }
+  .lanes, .cards, .steps, .navi-panel, .meta-grid { grid-template-columns: 1fr; }
+  .bar .hint { margin-left: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <span><b>NAKAJOX EXPERIMENT / 003</b> — SIMULATED ANNEALING</span>
+    <span>ORIGIN: YOKOHAMA</span>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="kicker">OPTIMIZATION &amp; THERMODYNAMICS</div>
+      <h1>DETOUR TO THE SHORTEST</h1>
+      <div class="philo-sub">まっすぐ進むだけでは、抜け出せない迷路がある。</div>
+      <p class="philo-lead">目先の近道は、本当に近道なのか。あえて選ぶ遠回りは、なぜ短い道へとつながるのか。</p>
+    </div>
+    <p class="lede">
+      サンタは横浜を出発し、すべての家を1回ずつ回って戻ります。どの順番なら、道のりが短くなるか。同じ地図・同じ出発ルートから、「短くなる変更だけ採用するA」と「最初は長くなる変更も採用するB（焼きなまし法）」が探し始め、見つけた道順を競わせます。
+    </p>
+  </section>
+
+  <noscript><p>この作品はJavaScriptで動きます。ブラウザの設定でJavaScriptを有効にしてください。</p></noscript>
+
+  <ol class="steps">
+    <li id="step-1" class="active">家を置く。地図をクリックで追加・削除（最初は見本の14軒が置いてあります）</li>
+    <li id="step-2">「① ルートを計算」を押すと、AとBが同じ出発ルートから、短い道順を探し始める</li>
+    <li id="step-3">計算が終わったら「② スタート」を押して、見つけた道順の短さを競争</li>
+  </ol>
+
+  <div class="bar">
+    <div class="action-group" id="preset-group" role="group" aria-label="ランダムで配置">
+      <span class="group-label">家の数を変える：</span>
+      <button class="btn" data-n="8" type="button">8軒</button>
+      <button class="btn" data-n="14" type="button">14軒</button>
+      <button class="btn" data-n="22" type="button">22軒</button>
+    </div>
+    <button class="btn btn-calc" id="calc" type="button" disabled>① ルートを計算</button>
+    <button class="btn btn-race" id="go" type="button" disabled>② スタート（競争開始）</button>
+    <div class="action-group" role="group" aria-label="家の編集">
+      <button class="btn" id="undo" type="button" disabled>1つ戻す</button>
+      <button class="btn btn-danger" id="clr" type="button" disabled>全部消す</button>
+    </div>
+    <span class="hint">地図タップ：家を追加 ／ 家をタップ：削除</span>
+  </div>
+
+  <div class="verdict" role="status" aria-live="polite">
+    <div id="msg"></div>
+    <div class="score" id="score"></div>
+  </div>
+
+  <div class="lanes">
+    <section class="lane a" id="lane-a">
+      <div class="lh">
+        <div>
+          <div class="lh-title"><span class="tag">CASE A</span><h2>近道だけを選ぶ</h2></div>
+          <p>ルートの一部を入れ替え、短くなったときだけ採用。遠回りは一切許さない。</p>
+        </div>
+        <div class="st" id="sa">STANDBY</div>
+      </div>
+      <div class="canvas-box">
+        <canvas id="ca" aria-label="Aの探索の地図。横浜を出発し、すべての家を回る道順が描かれます"></canvas>
+        <div class="empty-hint" id="hint-a">地図をクリックして家を置くか、「家の数を変える」を選択</div>
+      </div>
+      <div class="lf">
+        <div><div class="dist" id="da">—<small>仮想距離</small></div></div>
+        <div class="delta-badge" id="xa">試した回数: —</div>
+        <div class="heat">寄り道許容度<span class="t"><i id="ha"></i></span>0%（固定）</div>
+      </div>
+    </section>
+
+    <section class="lane b" id="lane-b">
+      <div class="lh">
+        <div>
+          <div class="lh-title"><span class="tag">CASE B</span><h2>遠回りも試す（焼きなまし法）</h2></div>
+          <p>同じ入れ替えを使い、熱いうちは長くなる変更も採用。冷ますほど、厳しく選ぶ。</p>
+        </div>
+        <div class="st" id="sb">STANDBY</div>
+      </div>
+      <div class="canvas-box">
+        <canvas id="cb" aria-label="Bの探索の地図。長くなる変更も試しながら、道順が落ち着いていく様子が描かれます"></canvas>
+        <div class="empty-hint" id="hint-b">Aと同じ地図が自動で反映されます</div>
+      </div>
+      <div class="lf">
+        <div><div class="dist" id="db">—<small>仮想距離</small></div></div>
+        <div class="delta-badge" id="xb">試した回数: —</div>
+        <div class="heat">寄り道許容度<span class="t"><i id="hb"></i></span>冷めるほど厳格化</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="legend">
+    <span><i></i>見つけた最良ルート</span>
+    <span><i class="d"></i>Bが今試しているルート</span>
+    <span><i class="w"></i>これまで試したルートの残像（重なるほど濃くなる）</span>
+    <span><i class="g"></i>走行済みの軌跡（届けた家は金色）</span>
+  </div>
+
+  <section class="graph" aria-labelledby="graph-title">
+    <div class="gh" id="graph-title">探し方の違いを、長さの変化で見る
+      <small>横軸は「何回試したか」、縦軸は「いま試しているルートの長さ」。下にいくほど短い道順です。</small>
+    </div>
+    <canvas id="cg" aria-label="AとBの、試した回数ごとのルートの長さの変化を示す折れ線グラフ"></canvas>
+    <p class="gcap"><b class="a">A</b>は早く下がり、行き詰まると止まります。<b class="b">B</b>は前半、Aより長いルートのまま揺れ動き、冷えるにつれて下がります。最後はAと同じ長さになる回も、Aを少し下回る回もあります。</p>
+  </section>
+
+  <div class="sec-head">
+    <div>
+      <div class="kicker">THEORY &amp; DAILY LIFE</div>
+      <h3 class="sec">遠回りが、近道になるとき</h3>
+    </div>
+    <p class="lead">焼きなまし法の土台は、1953年の物理の計算法（メトロポリス法）。1983年に、最適化の手法として提案されました。</p>
+  </div>
+
+  <div class="cards">
+    <article class="card">
+      <div>
+        <div class="card-num">01 / COMBINATORIAL EXPLOSION</div>
+        <h4>順番の数は、あっという間に増える</h4>
+        <p>訪問先が1軒増えるごとに、回り方の総数は掛け算で膨れ上がります。すべてを1つずつ調べる「総当たり」は、家が増えると現実的な時間で終わらなくなります。</p>
+      </div>
+      <div class="eg">
+        <div class="big" id="combo">—</div>
+        <p>友だち10人の家を回る順番だけで、約180万通り。20軒で約1.2×10<sup>18</sup>通りです。1秒に10億通り調べても約38年。30軒だと約1.3×10<sup>32</sup>通りで、毎秒10<sup>18</sup>回調べる機械でも約400万年かかります。</p>
+        <code>(N − 1)! ÷ 2　※Nは横浜を含む地点数</code>
+      </div>
+    </article>
+
+    <article class="card">
+      <div>
+        <div class="card-num">02 / LOCAL OPTIMA</div>
+        <h4>近道だけだと、行き詰まることがある</h4>
+        <p>「今より短くなる変更」だけを選ぶと、どれを試しても今より長くなる場所で止まることがあります。そこが、全体でいちばん短いとは限りません。</p>
+      </div>
+      <div class="eg">
+        <p>荷造りで、箱の中を少しずつ詰め直しても、もう入らない。でも、いったん全部出して詰め直すと、すっきり収まることがあります。小さな改善を重ねるだけでは、たどり着けない形があります。</p>
+        <code>目の前の最善 ≠ 全体の最善</code>
+      </div>
+    </article>
+
+    <article class="card">
+      <div>
+        <div class="card-num">03 / SIMULATED ANNEALING</div>
+        <h4>あえて、いったん散らかす</h4>
+        <p>金属は、熱してからゆっくり冷ますと、内部が整って安定します（焼きなまし）。この手順をまねた計算法です。熱いうちは長くなる変更も受け入れ、冷えるほど受け入れなくなります。</p>
+      </div>
+      <div class="eg">
+        <p>片付けと同じ。最初は机の上を、いったん全部広げる。そのあと、少しずつ慎重に戻していくと、きれいに収まります。</p>
+        <p>例：30だけ長くなる変更を受け入れる確率</p>
+        <div class="prob"><span>温度 100（熱い）</span><b>約74%</b><span>温度 10</span><b>約5%</b><span>温度 1（冷えた）</span><b>ほぼ0%</b></div>
+        <code>採用確率 P = exp(−Δ ÷ T)　Δ：増える距離　T：温度</code>
+      </div>
+    </article>
+  </div>
+
+  <section class="navi-panel">
+    <div>
+      <div class="kicker">DETOUR IN DAILY LIFE</div>
+      <h4>迷ったら、いったん大通りへ</h4>
+    </div>
+    <div>
+      <p>細い道で迷ったとき、いったん大通りに出たほうが、結局早く着くことがあります。目の前の道だけを見ず、一度遠回りして全体を整える。その感覚は、この作品と似ています。</p>
+      <p>ただし、ナビの道案内そのものは別の仕組みです。出発地から目的地までは、ダイクストラ法やA*で最短経路を確実に求められ、地図を階層化して幹線道路から先にたどることで速くしています。焼きなまし法の出番は、「複数の届け先を、どの順番で回るか」のように、組み合わせが膨大な問題です。宅配や巡回の計画では、完璧な答えを待たず、十分に短い道順を短時間で出す近似の手法が使われ、焼きなまし法やその仲間は、その選択肢の一つです。半導体の部品配置などでも使われてきました。</p>
+    </div>
+  </section>
+
+  <div class="meta-grid">
+    <div class="limits tech-box">
+      <h4>使用している技術・アルゴリズム</h4>
+      <ul>
+        <li>計算も描画も、このページの中だけで完結します。外部のライブラリ・フォント・通信は使っていません。</li>
+        <li>AとBは、同じ種類の入れ替え（ルートの一部を逆順にする2-optと、1つの家を別の位置へ移す簡易版のOr-opt）を使います。違うのは、長くなる変更を採用するかどうかだけです。Bはメトロポリス基準と、温度を少しずつ下げる指数冷却で採用を決めます。</li>
+      </ul>
+      <div class="tech-tags">
+        <span class="tech-tag">HTML5 Canvas 2D</span>
+        <span class="tech-tag">Vanilla JavaScript</span>
+        <span class="tech-tag">Simulated Annealing</span>
+        <span class="tech-tag">2-opt / 1点移動</span>
+        <span class="tech-tag">BigInt</span>
+      </div>
+    </div>
+
+    <div class="limits">
+      <h4>この実験が簡略化していること・前提条件</h4>
+      <ul>
+        <li>最短ルートは保証されません。AもBも、見つけた最良を競います。結果は毎回変わるので、何度か試して傾向を見てください。</li>
+        <li>出発ルートは、ランダムに作った20本のうち、いちばん長いものです。AとBに同じものを渡します。</li>
+        <li>計算量は同じではありません。Aは行き詰まると止まり、Bは決まった回数まで続けます。試した回数は、各地図の右下に表示されます。</li>
+        <li>地図は仮想の平面で、距離は座標間の直線距離を合計した値です（単位はありません）。実際の道路・渋滞・一方通行は含みません。</li>
+        <li>同じ入れ替えを使うため、差が小さい回も多くあります。家が多いほど、差は出やすくなります。</li>
+      </ul>
+    </div>
+  </div>
+
+<footer>
+    <span>DETOUR TO THE SHORTEST — SIMULATED ANNEALING &amp; TRAVELING SALESPERSON PROBLEM</span>
+    <span>NAKAJOX EXPERIMENT / © electriclady.xyz</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+const W = 900, H = 600, GW = 900, GH = 240;
+const base = { x: 450, y: 300 }, T0 = 135, T1 = 0.35, SPEED = 7.5;
+const SANS = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Meiryo,sans-serif';
+const MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+const $ = s => document.querySelector(s);
+
+let pts = [], phase = 'idle', raf = 0, score = { a: 0, b: 0, d: 0 }, arrivals = 0, clock = 0, scored = false, intro = true;
+
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+function sized(c) {
+  c.width = c.width * DPR;
+  c.height = c.height * DPR;
+  const x = c.getContext('2d');
+  x.setTransform(DPR, 0, 0, DPR, 0, 0);
+  return x;
+}
+function makeCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  return { c, x: sized(c) };
+}
+
+const lanes = ['a', 'b'].map(id => {
+  const c = $('#c' + id);
+  c.width = W; c.height = H;
+  const g = makeCanvas(W, H);
+  return {
+    id, c, x: sized(c), ghost: g.c, gx: g.x,
+    route: null, best: null, cum: null, d: 0, T: 0, sparks: [], trail: [], hist: [], histDone: false, arrived: false, rank: 0, iter: 0
+  };
+});
+const gc = $('#cg');
+gc.width = GW; gc.height = GH;
+const gx = sized(gc);
+
+const nodes = () => [base, ...pts];
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const len = (r, ns) => {
+  let t = 0;
+  for (let i = 0; i < r.length; i++) t += dist(ns[r[i]], ns[r[(i + 1) % r.length]]);
+  return t;
+};
+const msg = t => { $('#msg').innerHTML = t; };
+const shown = v => Math.round(v).toLocaleString('ja-JP');
+
+function combo() {
+  const n = pts.length + 1;
+  if (n < 3) return '1 通り';
+  let f = 1n;
+  for (let i = 2n; i < BigInt(n); i++) f *= i;
+  const s = (f / 2n).toString();
+  return s.length > 9
+    ? `約 ${s[0]}.${s[1]} × 10<sup>${s.length - 1}</sup> 通り`
+    : Number(s).toLocaleString('ja-JP') + ' 通り';
+}
+
+function showScore() {
+  const tot = score.a + score.b + score.d;
+  $('#score').textContent = tot
+    ? `SCORE（この配置での通算成績）   CASE A: ${score.a}勝  /  CASE B: ${score.b}勝  /  DRAW: ${score.d}`
+    : '';
+}
+
+function setStep(n) {
+  [1, 2, 3].forEach(i => {
+    const el = $('#step-' + i);
+    el.classList.toggle('active', i === n);
+    el.classList.toggle('done', i < n);
+  });
+}
+
+function updatePresetButtons(activeN) {
+  document.querySelectorAll('[data-n]').forEach(b => {
+    b.classList.toggle('active-preset', Number(b.dataset.n) === activeN);
+  });
+}
+
+function syncButtons() {
+  const busy = phase === 'search' || phase === 'run';
+  const ok = pts.length >= 3;
+
+  $('#preset-group').classList.toggle('highlight-group', pts.length === 0);
+  $('#hint-a').classList.toggle('hidden', pts.length > 0);
+  $('#hint-b').classList.toggle('hidden', pts.length > 0);
+
+  $('#calc').disabled = busy || !ok;
+  $('#calc').classList.toggle('ready-pulse', phase === 'idle' && ok);
+  $('#calc').textContent = phase === 'search' ? 'ルートを計算中...'
+    : (phase === 'calculated' || phase === 'done' ? '① 再計算する' : '① ルートを計算');
+
+  $('#go').disabled = busy || (phase !== 'calculated' && phase !== 'done');
+  $('#go').textContent = phase === 'run' ? 'サンタ走行中...'
+    : (phase === 'done' ? '② もう一度走る' : '② スタート（競争開始）');
+  $('#go').classList.toggle('ready-pulse', phase === 'calculated');
+
+  $('#undo').disabled = busy || pts.length === 0;
+  $('#clr').disabled = busy || pts.length === 0;
+  document.querySelectorAll('[data-n]').forEach(b => { b.disabled = busy; });
+}
+
+function clearGhost(L) { L.gx.clearRect(0, 0, W, H); }
+
+function reset(keepScore) {
+  cancelAnimationFrame(raf);
+  phase = 'idle';
+  scored = false;
+  if (!keepScore) score = { a: 0, b: 0, d: 0 };
+  lanes.forEach(L => {
+    L.route = L.best = L.cum = null;
+    L.d = 0; L.T = 0; L.iter = 0; L.sparks = []; L.trail = []; L.hist = []; L.histDone = false; L.arrived = false; L.rank = 0;
+    clearGhost(L);
+    $('#lane-' + L.id).classList.remove('winner');
+  });
+  $('#combo').innerHTML = pts.length ? `家${pts.length}軒 → ${combo()}` : '—';
+  showScore();
+  setStep(pts.length < 3 ? 1 : 2);
+  syncButtons();
+  ui();
+  lanes.forEach(draw);
+  drawGraph();
+
+  if (pts.length === 0) {
+    msg('<b>家を置いてください。</b>黒い地図をクリックすると、配達先の家が増えます。「家の数を変える」で、まとめて置くこともできます（3軒以上で計算できます）。');
+  } else if (pts.length < 3) {
+    msg(`いま ${pts.length}軒。あと <b>${3 - pts.length}軒</b> 置くと、ルート計算ができます。`);
+  } else if (intro) {
+    intro = false;
+    msg('<b>はじめに。</b>サンタは、金色の菱形（横浜）を出発し、白い点の家をすべて1回ずつ回って戻ります。見本の14軒を置きました。<b>「① ルートを計算」</b>を押すと、AとBが同じ出発ルートから、短い道順を探し始めます。');
+  } else {
+    msg(`家は ${pts.length}軒。<b>「① ルートを計算」</b>を押して、AとBの探し方の違いを見てみましょう。`);
+  }
+}
+
+function scatter(n) {
+  pts = [];
+  if (n === 8) {
+    const pattern = [
+      { x: 450, y: 120 }, { x: 450, y: 215 }, { x: 700, y: 210 }, { x: 575, y: 265 },
+      { x: 640, y: 470 }, { x: 515, y: 390 }, { x: 230, y: 440 }, { x: 260, y: 200 }
+    ];
+    pts = pattern.map(p => ({ x: p.x + (Math.random() - 0.5) * 26, y: p.y + (Math.random() - 0.5) * 26 }));
+  } else {
+    const clusters = [
+      { cx: 210, cy: 155, r: 95 }, { cx: 700, cy: 165, r: 95 }, { cx: 710, cy: 445, r: 95 },
+      { cx: 200, cy: 445, r: 95 }, { cx: 450, cy: 135, r: 75 }, { cx: 450, cy: 470, r: 75 }
+    ];
+    let guard = 0;
+    const minDist = n > 16 ? 44 : 56;
+    while (pts.length < n && guard++ < 6000) {
+      const c = clusters[pts.length % clusters.length];
+      const ang = Math.random() * Math.PI * 2;
+      const rad = Math.random() * c.r;
+      const p = {
+        x: Math.max(54, Math.min(W - 54, c.cx + Math.cos(ang) * rad)),
+        y: Math.max(54, Math.min(H - 54, c.cy + Math.sin(ang) * rad))
+      };
+      if (dist(p, base) > 74 && pts.every(q => dist(p, q) > minDist)) pts.push(p);
+    }
+  }
+  updatePresetButtons(n);
+  reset(false);
+}
+
+function cumOf(r, ns) {
+  const c = [0];
+  for (let i = 0; i < r.length; i++) c.push(c[i] + dist(ns[r[i]], ns[r[(i + 1) % r.length]]));
+  return c;
+}
+
+function posAt(L, ns, d) {
+  const c = L.cum, r = L.best;
+  let k = 0;
+  while (k < r.length - 1 && c[k + 1] < d) k++;
+  const a = ns[r[k]], b = ns[r[(k + 1) % r.length]], s = c[k + 1] - c[k] || 1;
+  const t = Math.min(1, (d - c[k]) / s);
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+function startCalculation() {
+  if (pts.length < 3 || phase === 'search' || phase === 'run') return;
+  const ns = nodes(), n = ns.length;
+
+  // AとBに同じ出発ルートを渡す（ランダムに作った20本のうち、いちばん長いもの）
+  let first = null, firstD = -1;
+  for (let trial = 0; trial < 20; trial++) {
+    const rest = [...Array(n - 1)].map((_, i) => i + 1);
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+    const cand = [0, ...rest], d = len(cand, ns);
+    if (d > firstD) { firstD = d; first = cand; }
+  }
+
+  const tot = 2600 + 480 * pts.length;
+  scored = false;
+
+  lanes.forEach(L => {
+    L.ns = ns;
+    L.route = first.slice();
+    L.best = first.slice();
+    L.cur = L.bestD = firstD;
+    L.iter = 0; L.stale = 0; L.done = false; L.arrived = false; L.d = 0; L.cum = null;
+    L.sparks = []; L.trail = []; L.total = tot;
+    L.hist = [{ x: 0, y: firstD }]; L.histDone = false;
+    L.T = L.id === 'b' ? T0 : 0;
+    clearGhost(L);
+    $('#lane-' + L.id).classList.remove('winner');
+  });
+
+  phase = 'search';
+  setStep(2);
+  syncButtons();
+  msg('<b>ルートを計算中...</b> 右のBでは、赤い破線が長くなる変更も試しながら動き回り、温度が下がるにつれて、緑の最良ルートに落ち着いていきます。左のAは、短くなる変更だけを採用します。下のグラフで、長さの変化も見られます。');
+  raf = requestAnimationFrame(tick);
+}
+
+function startRace() {
+  if (phase !== 'calculated' && phase !== 'done') return;
+  arrivals = 0;
+  lanes.forEach(L => {
+    L.d = 0; L.arrived = false; L.rank = 0; L.trail = [];
+    L.cum = cumOf(L.best, L.ns);
+    $('#lane-' + L.id).classList.remove('winner');
+  });
+  phase = 'run';
+  setStep(3);
+  syncButtons();
+  msg('<b>競争スタート！</b>計算で見つけたそれぞれの最良ルートを、光のサンタが走ります。総距離が短い方が、先に横浜へ帰ってきます。');
+  raf = requestAnimationFrame(tick);
+}
+
+// AとBは同じ種類の入れ替え（2-opt 72% / 1点移動 28%）を使う。違うのは、採用のルールだけ。
+function propose(L) {
+  const r = L.route, n = r.length;
+  const c = r.slice();
+  let pivot = 1;
+
+  if (Math.random() < 0.72) {
+    const i = 1 + Math.floor(Math.random() * (n - 2));
+    const j = i + 1 + Math.floor(Math.random() * (n - i - 1));
+    for (let a = i, b = j; a < b; a++, b--) { const t = c[a]; c[a] = c[b]; c[b] = t; }
+    pivot = i;
+  } else {
+    const from = 1 + Math.floor(Math.random() * (n - 1));
+    const to = 1 + Math.floor(Math.random() * (n - 1));
+    const [item] = c.splice(from, 1);
+    c.splice(to, 0, item);
+    pivot = to;
+  }
+
+  const d = len(c, L.ns), delta = d - L.cur;
+  L.iter++;
+
+  let take;
+  if (L.id === 'a') {
+    take = delta < -1e-9;
+  } else {
+    L.T = T0 * Math.pow(T1 / T0, Math.min(1, L.iter / L.total));
+    take = delta < 0 || Math.random() < Math.exp(-delta / L.T);
+  }
+
+  if (take) {
+    L.route = c;
+    L.cur = d;
+    L.stale = 0;
+    if (d < L.bestD - 1e-9) {
+      L.bestD = d;
+      L.best = c.slice();
+      const pt = L.ns[c[pivot]];
+      if (L.sparks.length < 18) L.sparks.push({ x: pt.x, y: pt.y, life: 1 });
+    }
+  } else {
+    L.stale++;
+  }
+
+  if (L.id === 'a' ? L.stale >= n * n * 8 : L.iter >= L.total) {
+    L.done = true;
+    L.route = L.best.slice();
+    L.cur = L.bestD;
+    L.T = 0;
+  }
+}
+
+function finishRace() {
+  phase = 'done';
+  const a = lanes[0].bestD, b = lanes[1].bestD, diff = (a - b) / a * 100;
+  syncButtons();
+
+  if (Math.abs(diff) < 0.4) {
+    if (!scored) score.d++;
+    msg('<b>引き分け。</b>AとBは、ほぼ同じ長さの道順を見つけました。「① 再計算する」や、家の数を変えて、もう一度試してみてください。');
+  } else if (diff > 0) {
+    if (!scored) score.b++;
+    $('#lane-b').classList.add('winner');
+    msg(`<b>CASE B の勝ち。</b>長くなる変更も受け入れたBは、Aより <b>${diff.toFixed(1)}% 短い</b>道順を見つけました。`);
+  } else {
+    if (!scored) score.a++;
+    $('#lane-a').classList.add('winner');
+    msg(`<b>今回は CASE A の勝ち。</b>Aのほうが ${(-diff).toFixed(1)}% 短くなりました。焼きなまし法でも、必ず勝つわけではありません。「① 再計算する」で、何度か比べてみてください。`);
+  }
+  scored = true;
+  showScore();
+}
+
+function polyOn(c, r, ns, close) {
+  c.beginPath();
+  r.forEach((k, i) => i ? c.lineTo(ns[k].x, ns[k].y) : c.moveTo(ns[k].x, ns[k].y));
+  if (close) c.closePath();
+}
+
+function tick() {
+  clock++;
+  if (phase === 'search') {
+    const per = Math.max(8, Math.ceil(lanes[0].total / 230));
+    lanes.forEach(L => {
+      for (let k = 0; k < per && !L.done; k++) propose(L);
+      if (!L.histDone) {
+        L.hist.push({ x: L.iter, y: L.cur });
+        if (L.done) L.histDone = true;
+        else {
+          L.gx.save();
+          L.gx.lineJoin = 'round';
+          L.gx.lineWidth = 1.1;
+          L.gx.strokeStyle = L.id === 'b' ? 'rgba(240, 106, 84, 0.035)' : 'rgba(92, 225, 230, 0.02)';
+          polyOn(L.gx, L.route, L.ns, true);
+          L.gx.stroke();
+          L.gx.restore();
+        }
+      }
+    });
+    if (lanes.every(L => L.done)) {
+      phase = 'calculated';
+      setStep(3);
+      syncButtons();
+      msg(`<b>ルート計算完了。</b>（A: ${shown(lanes[0].bestD)} ／ B: ${shown(lanes[1].bestD)}　※仮想距離）<b>「② スタート（競争開始）」</b>を押して、走らせましょう。`);
+    }
+  } else if (phase === 'run') {
+    lanes.forEach(L => {
+      if (!L.arrived) {
+        L.d += SPEED;
+        const tt = L.cum[L.cum.length - 1];
+        if (L.d >= tt) { L.d = tt; L.arrived = true; L.rank = ++arrivals; }
+        const pos = posAt(L, L.ns, L.d);
+        L.trail.push({ x: pos.x, y: pos.y });
+        if (L.trail.length > 26) L.trail.shift();
+      }
+    });
+    if (lanes.every(L => L.arrived)) finishRace();
+  }
+
+  lanes.forEach(draw);
+  drawGraph();
+  ui();
+  if (phase === 'search' || phase === 'run') raf = requestAnimationFrame(tick);
+  else if (lanes.some(L => L.sparks.length > 0)) raf = requestAnimationFrame(tick);
+}
+
+function ui() {
+  lanes.forEach(L => {
+    const id = L.id, run = !!L.best;
+    $('#d' + id).firstChild.textContent = run ? shown(L.bestD) : '—';
+    $('#x' + id).textContent = run ? `試した回数: ${L.iter.toLocaleString('ja-JP')}回` : '試した回数: —';
+    $('#h' + id).style.width = (id === 'b' && run && phase === 'search') ? (L.T / T0 * 100) + '%' : '0%';
+
+    let s = 'STANDBY';
+    if (phase === 'search') s = L.done ? (id === 'a' ? 'STOPPED / 計算終了' : 'COOLED / 計算終了') : 'CALCULATING...';
+    else if (phase === 'calculated') s = 'ROUTE READY';
+    else if (phase === 'run') s = L.arrived ? (L.rank === 1 ? '1ST ARRIVAL' : 'ARRIVED') : 'RUNNING...';
+    else if (phase === 'done') {
+      const diff = Math.abs(lanes[0].bestD - lanes[1].bestD);
+      s = diff < 0.4 ? 'DRAW' : (L.rank === 1 ? 'WINNER / 先着' : '2ND');
+    }
+    $('#s' + id).textContent = s;
+  });
+}
+
+function drawGraph() {
+  const x = gx;
+  x.fillStyle = '#080b10';
+  x.fillRect(0, 0, GW, GH);
+  const cw = gc.clientWidth || GW, narrow = cw < 520, fs = Math.min(26, 11 * GW / cw);
+  const pl = narrow ? 58 : 62, pr = 24, pt = 16, pb = 38, pw = GW - pl - pr, ph = GH - pt - pb;
+
+  x.strokeStyle = '#1e2936';
+  x.lineWidth = 1;
+  x.strokeRect(pl + 0.5, pt + 0.5, pw, ph);
+  x.fillStyle = '#8494a7';
+  x.font = `${fs}px ${SANS}`;
+  x.textAlign = 'center';
+  x.fillText(narrow ? '回数 →' : '試した回数 →', pl + pw / 2, GH - 10);
+  x.save();
+  x.translate(fs + 2, pt + ph / 2);
+  x.rotate(-Math.PI / 2);
+  x.fillText(narrow ? '下ほど短い' : 'いまのルートの長さ（下ほど短い）', 0, 0);
+  x.restore();
+
+  const A = lanes[0], B = lanes[1];
+  if (!A.hist.length) {
+    x.fillText(narrow ? '「① ルートを計算」で描かれます' : '「① ルートを計算」を押すと、AとBの探し方の違いが、ここに描かれます', pl + pw / 2, pt + ph / 2 + 4);
+    return;
+  }
+  const xmax = Math.max(1, B.total);
+  let ymax = -Infinity, ymin = Infinity;
+  [A, B].forEach(L => L.hist.forEach(p => { if (p.y > ymax) ymax = p.y; if (p.y < ymin) ymin = p.y; }));
+  if (ymax - ymin < 1) ymax = ymin + 1;
+  const span = ymax - ymin;
+  ymin -= span * 0.06;
+  ymax += span * 0.04;
+  const X = v => pl + Math.min(1, v / xmax) * pw;
+  const Y = v => pt + (1 - (v - ymin) / (ymax - ymin)) * ph;
+
+  [[A, '#5ce1e6', 1.8, 'A'], [B, '#f06a54', 1.4, 'B']].forEach(([L, col, lw, name]) => {
+    x.strokeStyle = col;
+    x.lineWidth = lw;
+    x.lineJoin = 'round';
+    x.beginPath();
+    L.hist.forEach((p, i) => i ? x.lineTo(X(p.x), Y(p.y)) : x.moveTo(X(p.x), Y(p.y)));
+    x.stroke();
+    const last = L.hist[L.hist.length - 1];
+    x.fillStyle = col;
+    x.beginPath();
+    x.arc(X(last.x), Y(last.y), 3.5, 0, Math.PI * 2);
+    x.fill();
+    if (L.histDone) {
+      x.font = `500 ${fs}px ${MONO}`;
+      x.textAlign = X(last.x) > pl + pw - 90 ? 'right' : 'left';
+      const dx = X(last.x) > pl + pw - 90 ? -9 : 9;
+      x.fillText(`${name} ${shown(last.y)}${name === 'A' && !narrow ? '（停止）' : ''}`, X(last.x) + dx, Y(last.y) + (name === 'A' ? fs + 4 : -9));
+    }
+  });
+}
+
+function draw(L) {
+  const x = L.x, ns = nodes();
+  x.fillStyle = '#080b10';
+  x.fillRect(0, 0, W, H);
+
+  x.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+  x.lineWidth = 1;
+  x.beginPath();
+  for (let g = 50; g < W; g += 50) { x.moveTo(g, 0); x.lineTo(g, H); }
+  for (let g = 50; g < H; g += 50) { x.moveTo(0, g); x.lineTo(W, g); }
+  x.stroke();
+
+  x.strokeStyle = 'rgba(227, 179, 92, 0.06)';
+  [120, 240, 360].forEach(r => { x.beginPath(); x.arc(base.x, base.y, r, 0, Math.PI * 2); x.stroke(); });
+
+  if (L.id === 'b' && phase === 'search' && L.T > 1) {
+    const grad = x.createRadialGradient(base.x, base.y, 40, base.x, base.y, 420);
+    grad.addColorStop(0, `rgba(240, 106, 84, ${0.15 * L.T / T0})`);
+    grad.addColorStop(1, 'rgba(240, 106, 84, 0)');
+    x.fillStyle = grad;
+    x.fillRect(0, 0, W, H);
+  }
+
+  x.drawImage(L.ghost, 0, 0, W, H);
+
+  const live = L.best && L.best.length === ns.length;
+  const running = live && (phase === 'run' || phase === 'done') && L.cum;
+
+  if (live) {
+    x.save();
+    x.strokeStyle = running ? 'rgba(92, 214, 156, 0.28)' : (phase === 'search' && L.id === 'b' ? 'rgba(92, 214, 156, 0.55)' : '#5cd69c');
+    x.lineWidth = running ? 1.8 : 2.6;
+    x.lineJoin = 'round';
+    polyOn(x, L.best, ns, true);
+    x.stroke();
+    x.restore();
+
+    if (L.id === 'b' && phase === 'search') {
+      x.save();
+      x.setLineDash([7, 5]);
+      x.lineDashOffset = -clock * 1.1;
+      x.strokeStyle = 'rgba(240, 106, 84, 0.92)';
+      x.lineWidth = 2.1;
+      polyOn(x, L.route, ns, true);
+      x.stroke();
+      x.restore();
+    }
+
+    if (running) {
+      x.save();
+      x.strokeStyle = '#e3b35c';
+      x.lineWidth = 3.2;
+      x.lineJoin = 'round';
+      x.beginPath();
+      x.moveTo(base.x, base.y);
+      let k = 0;
+      while (k < L.best.length && L.cum[k + 1] <= L.d) {
+        const p = ns[L.best[(k + 1) % L.best.length]];
+        x.lineTo(p.x, p.y);
+        k++;
+      }
+      const p = posAt(L, ns, L.d);
+      x.lineTo(p.x, p.y);
+      x.stroke();
+      x.restore();
+    }
+  }
+
+  for (let i = L.sparks.length - 1; i >= 0; i--) {
+    const sp = L.sparks[i];
+    x.strokeStyle = `rgba(92, 214, 156, ${sp.life * 0.7})`;
+    x.lineWidth = 1.5;
+    x.beginPath();
+    x.arc(sp.x, sp.y, (1 - sp.life) * 26 + 4, 0, Math.PI * 2);
+    x.stroke();
+    sp.life -= 0.045;
+    if (sp.life <= 0) L.sparks.splice(i, 1);
+  }
+
+  const seen = new Set();
+  if (running) L.best.forEach((k, i) => { if (i && L.cum[i] <= L.d) seen.add(k); });
+
+  for (let k = 1; k < ns.length; k++) {
+    const on = seen.has(k), px = ns[k].x, py = ns[k].y;
+    if (on) {
+      x.strokeStyle = 'rgba(227, 179, 92, 0.38)';
+      x.lineWidth = 1.2;
+      x.beginPath();
+      x.arc(px, py, 13, 0, Math.PI * 2);
+      x.stroke();
+    }
+    x.beginPath();
+    x.arc(px, py, on ? 6 : 4.5, 0, Math.PI * 2);
+    x.fillStyle = on ? '#e3b35c' : '#eef2f6';
+    x.fill();
+  }
+
+  x.save();
+  x.strokeStyle = 'rgba(227, 179, 92, 0.45)';
+  x.lineWidth = 1.2;
+  x.beginPath();
+  x.arc(base.x, base.y, 15, 0, Math.PI * 2);
+  x.stroke();
+  x.translate(base.x, base.y);
+  x.rotate(Math.PI / 4);
+  x.fillStyle = '#e3b35c';
+  x.fillRect(-6.5, -6.5, 13, 13);
+  x.restore();
+
+  const cw0 = L.c.clientWidth || W, fs0 = Math.min(26, 11.5 * W / cw0);
+  x.fillStyle = '#e3b35c';
+  x.font = `500 ${fs0}px ${SANS}`;
+  x.textAlign = 'center';
+  x.fillText(cw0 < 520 ? '横浜' : '横浜（出発・帰着）', base.x, base.y + 14 + fs0);
+
+  if (running && !L.arrived) {
+    for (let i = 0; i < L.trail.length; i++) {
+      const tr = L.trail[i], f = i / L.trail.length;
+      x.fillStyle = `rgba(240, 106, 84, ${f * 0.45})`;
+      x.beginPath();
+      x.arc(tr.x, tr.y, f * 6, 0, Math.PI * 2);
+      x.fill();
+    }
+    const p = posAt(L, ns, L.d);
+    const glow = x.createRadialGradient(p.x, p.y, 2, p.x, p.y, 22);
+    glow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    glow.addColorStop(0.35, 'rgba(240, 106, 84, 0.75)');
+    glow.addColorStop(1, 'rgba(240, 106, 84, 0)');
+    x.fillStyle = glow;
+    x.beginPath();
+    x.arc(p.x, p.y, 22, 0, Math.PI * 2);
+    x.fill();
+    x.fillStyle = '#ffffff';
+    x.beginPath();
+    x.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+    x.fill();
+  }
+}
+
+lanes.forEach(L => L.c.addEventListener('pointerdown', e => {
+  if (phase === 'search' || phase === 'run') {
+    msg('計算・走行中は、家を動かせません。終わるまで待つか、「全部消す」を押してください。');
+    return;
+  }
+  const r = L.c.getBoundingClientRect();
+  const p = { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  const hit = pts.findIndex(q => dist(p, q) < 22);
+
+  if (hit >= 0) {
+    pts.splice(hit, 1);
+  } else if (pts.length >= 30) {
+    msg('家は最大30軒まで置けます。');
+    return;
+  } else if (dist(p, base) < 42 || pts.some(q => dist(p, q) < 24)) {
+    msg('横浜か、ほかの家に近すぎます。少し離れた場所をクリックしてください。');
+    return;
+  } else {
+    pts.push(p);
+  }
+  updatePresetButtons(null);
+  reset(false);
+}));
+
+$('#calc').onclick = startCalculation;
+$('#go').onclick = startRace;
+$('#undo').onclick = () => {
+  if (phase === 'search' || phase === 'run' || !pts.length) return;
+  pts.pop();
+  updatePresetButtons(null);
+  reset(false);
+};
+$('#clr').onclick = () => {
+  if (phase === 'search' || phase === 'run') return;
+  pts = [];
+  updatePresetButtons(null);
+  reset(false);
+};
+document.querySelectorAll('[data-n]').forEach(b => {
+  b.onclick = () => {
+    if (phase === 'search' || phase === 'run') return;
+    scatter(Number(b.dataset.n));
+  };
+});
+
+window.addEventListener('resize', () => { lanes.forEach(draw); drawGraph(); });
+scatter(14);
+})();
+</script>
+</body>
+</html>
